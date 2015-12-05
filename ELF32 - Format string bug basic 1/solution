@@ -1,0 +1,5 @@
+Le printf ne contient pas de chaine de formatage, on va donc se servir de cette faille.
+On lancera donc le programme de cette facon :
+/ch5 `python -c "print '%x'*20"`
+ce qui nous permet d'afficher la memoire.
+On obtient donc le contenu de la memoire en hexadecimal, il ne nous reste qu'a la traduire pour retrouver la chaine de caractere

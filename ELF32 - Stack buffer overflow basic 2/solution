@@ -1,0 +1,7 @@
+On veux changer l'adresse contenue par le pointeur sur fonction.
+On sais que buf fait 128 octet et fgets nous permet de depasser ce nombre.
+La faille est donc ici.
+On peux verifier avec gdb qu'en ecrivant 128 'A' + une adresse on ecrase bien la suivante.
+On cherche donc l'adresse de shell grace a nm, on trouve 08048464
+Il ne nous reste plus qu'a injecter cette adresse dans le programme :
+(python -c 'print "A"*128 +"\x64\x84\x04\x08" ' ;cat) | ./ch15

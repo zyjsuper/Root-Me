@@ -1,0 +1,7 @@
+Le but du buffer overflow va etre de profiter de la taille predefini du buf (ici 40) afin d'ecrire dans la memoire a la suite.
+On sais qu'apres le 40eme caractere on commence donc a ecrire dans la memoire au niveau de la variable check, on peux le verifier via gdb en affichant le contenu de la memoire.
+On cherche donc a placer la valeur voulu dans la variable, ce que l'on realise avec la commande suivante :
+python -c 'print "A"*40 +"\xef\xbe\xad\xde"' | ./ch13
+On obtiens bien le message mais on ne reste pas dans le shell, on va donc utiliser cat pour que le shell ne quitte pas et pouvoir s'en servir
+(python -c 'print "A"*40 +"\xef\xbe\xad\xde"' ;cat) | ./ch13
+Le programme est alors dans le shell et il ne nous reste plus qu'a afficher le fichier contenant le mot de passe

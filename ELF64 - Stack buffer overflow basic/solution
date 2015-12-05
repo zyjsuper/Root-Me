@@ -1,0 +1,6 @@
+On vois que le scanf remplit buffer sans limite de taille.
+Sachant que le buffer ne fait que 256 char, on sais que c'est ici que se trouvera la faille pour le buffer overflow.
+On veux s'en servir pour appeler CallMeMaybe a la place du retour de la fonction main.
+Grace a gdb, on peux faire plusieurs tests pour voir a quel moment l'adresse du retour est ecrasee.
+On s'apercoit qu'il faut 280 charactere. On veux donc envoyer 280 char plus l'adresse de la fonction.
+(perl -e 'print "a" x 280 . "\xcd\x06\x40\x00\x00\x00\x00\x00"' ; cat) | ./ch35

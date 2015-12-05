@@ -1,0 +1,6 @@
+On vois dans le code source que la fonction ls est appelee par le programme avec comme parametre le fichier .passwd
+On va creer une commande ls qui fait appel a cat et modifier le PATH afin qu'il appelle notre fonction au lieu du vrai ls
+1. On creer un fichier ls qui contient : "#!/bin/cat"
+2. On y met les droits "chmod 755 /var/tmp/ls"
+3. On modifie le PATH : "PATH=/var/tmp"
+4. On execute le binaire et le mot de passe s'affiche

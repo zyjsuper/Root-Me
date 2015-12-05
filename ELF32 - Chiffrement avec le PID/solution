@@ -1,0 +1,18 @@
+Dans cet exercice le chiffrement depend du pid, l'objectif est donc de predire le pid du programme
+Si on lance le binaire avec notre programme, les deux auront le meme pid ce qui nous permet de le prevoir.
+On fait donc un code qui recupere le pid, l'encode de la meme facon que le programme puis execute le binaire avec notre solution.
+#include <stdio.h>
+#include <stdlib.h>
+#include <crypt.h>
+#include <unistd.h>
+#include <string.h> 
+#define chemin "/wargame/binary/binary4/binary4"
+#define binaire "binary4"
+int main (void)
+{
+	char pid[16];
+	snprintf(pid, sizeof(pid), "%i", getpid()); // ici récupère le pid
+	char *arg = crypt(pid, "$1$awesome"); // on crée le résultat à donner en argument
+	execl(chemin, binaire, arg, NULL);  // on exécute binary4 en lui donnant l'argument qu'il attend
+	return 0;
+}

